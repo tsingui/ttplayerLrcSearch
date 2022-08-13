@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.*?>
+<?import javafx.scene.control.Button?>
+
+<!--
+style="-fx-pref-height: 100%; -fx-pref-width: 100%; -fx-background-color: red;"
+-->
+
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1200.0" spacing="10.0" style="-fx-background-color: red;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.ttplayerlrcsearch.ui.ControllerWindow">
+   <children>
+      <!--<Button mnemonicParsing="false" onAction="#onload" text="刷新" />-->
+      <!--<Button mnemonicParsing="false" onAction="#exitService" text="退出" />-->
+      <HBox layoutY="23.0" prefWidth="1200.0" spacing="10.0" style="-fx-background-color: yellow;" styleClass="bg" VBox.vgrow="ALWAYS">
+         <children>
+            <WebView fx:id="web" maxWidth="Infinity" maxHeight="Infinity" prefHeight="600.0" prefWidth="600.0" HBox.hgrow="ALWAYS" />
+         </children>
+      </HBox>
+      <!--<TextArea layoutY="23.0" prefHeight="378.0" prefWidth="600.0" fx:id="logOut"/>-->
+   </children>
+</VBox>

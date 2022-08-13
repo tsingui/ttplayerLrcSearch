@@ -108,4 +108,10 @@ public class StringUtil {
         String s = readLastLine(new File("./logs/info.log"), 100);
         saveFile(s,new File("z:/out.txt"));
     }
+
+    @Test
+    public void t002(){
+        int size = 1858513589;
+        log.info(StringUtil.formatSize(size));
+    }
 }

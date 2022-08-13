@@ -27,6 +27,10 @@ public class FindAllMLC implements ApplicationContextAware, InitializingBean {
     public void afterPropertiesSet() throws Exception {
         // 查找所有MusicLrcSearch接口的实现类
         MLC_Service = applicationContext.getBeansOfType(MusicLrcSearch.class);
+        //初始化方法
+        for (String key:MLC_Service.keySet()){
+            MLC_Service.get(key).initialization();
+        }
     }
 
     public Map<String, MusicLrcSearch> getAllMLCService() {

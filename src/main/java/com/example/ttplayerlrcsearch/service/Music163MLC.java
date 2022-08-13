@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.example.ttplayerlrcsearch.entity.ApiResponse;
 import com.example.ttplayerlrcsearch.entity.BuffData;
+import com.example.ttplayerlrcsearch.entity.TTPlayResult;
 import com.example.ttplayerlrcsearch.util.StringUtil;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
@@ -59,9 +60,9 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
     }
 
     @Override
-    public List<Map<String, String>> search(String artist, String title) {
+    public List<TTPlayResult> search(String artist, String title) {
         String resultText = searchApi(String.format("%s %s", title, artist));
-        List<Map<String, String>> songList = parse(resultText);
+        List<TTPlayResult> songList = parse(resultText);
         return songList;
     }
 
@@ -174,8 +175,8 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         return data;
     }
 
-    private List<Map<String, String>> parse(String sourseData){
-        List<Map<String, String>> result = new ArrayList<>();
+    private List<TTPlayResult> parse(String sourseData){
+        List<TTPlayResult> result = new ArrayList<>();
         long start = System.currentTimeMillis();
         JSONObject obj = JSON.parseObject(sourseData);
         log.debug("parseJSON Use Time: {} ms,data size: {}"
@@ -188,18 +189,29 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         JSONArray songList = obj.getJSONObject("result").getJSONArray("songs");
         for (int i = 0; i < songList.size(); i++) {
             JSONObject songItem = songList.getJSONObject(i);
-            Map<String, String> song = new HashMap<>();
+            JSONArray singerList = songItem.getJSONArray("ar");
 
+            // v1
+            /*
+            Map<String, String> song = new HashMap<>();
             song.put("id_sou", songItem.getString("id"));
             //ID特殊处理
             song.put("id", BuffData.addId(songItem.getString("id"),this));
-
             song.put("title",String.format("【%s】%s",this.getSearchName(),songItem.getString("name")));
-            JSONArray singerList = songItem.getJSONArray("ar");
+            //JSONArray singerList = songItem.getJSONArray("ar");
             song.put("artist",arrayJoinSinger(singerList,"、"));
-
 //            log.info(JSON.toJSONString(song));
             result.add(song);
+             */
+
+            //v2
+            TTPlayResult song = new TTPlayResult();
+            song.id = BuffData.addId(songItem.getString("id"),this);
+            song.title = "【"+this.getSearchName()+"】"+songItem.getString("name");
+                    //String.format("【%s】%s",this.getSearchName(),songItem.getString("name"));
+            song.artist = arrayJoinSinger(singerList,"、");
+            result.add(song);
+
             //内存优化
             singerList.clear();
             singerList = null;
@@ -267,6 +279,11 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         return lrc;
     }
 
+    @Override
+    public void initialization() {
+
+    }
+
     @Test
     public void t001(){
         //注册BouncyCastle，参考：https://blog.csdn.net/qq_29583513/article/details/78866461
@@ -296,11 +313,11 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
             e.printStackTrace();
         }
     }
-    @Test
-    public void t002(){
-        String data = searchApi("飞鸟和蝉");
-        List<Map<String, String>> parse = parse(data);
-    }
+//    @Test
+//    public void t002(){
+//        String data = searchApi("飞鸟和蝉");
+//        List<Map<String, String>> parse = parse(data);
+//    }
     @Test
     public void t003(){
         Unirest.setTimeouts(0, 0);

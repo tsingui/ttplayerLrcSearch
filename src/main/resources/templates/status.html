@@ -72,6 +72,12 @@
     }
     .logText{
       flex-grow: 1;
+      margin-bottom: 1rem;
+    }
+    .placeholder{
+      height: 1rem;
+      color: white;
+      background: white;
     }
     .logText span{
       white-space: nowrap;  /*强制span不换行*/
@@ -226,6 +232,7 @@
     <hr>
     <!--<textarea class="logText"></textarea>-->
     <div class="logText"></div>
+    <div class="placeholder"> <!--JavaFx占位BUG-->... </div>
   </div>
 </div>
 </body>

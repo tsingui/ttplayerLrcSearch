@@ -1,10 +1,7 @@
 package com.example.ttplayerlrcsearch.controller;
 
 import com.alibaba.fastjson.JSON;
-import com.example.ttplayerlrcsearch.entity.ApiResponse;
-import com.example.ttplayerlrcsearch.entity.BuffData;
-import com.example.ttplayerlrcsearch.entity.BuffDataEntity;
-import com.example.ttplayerlrcsearch.entity.ServerRunData;
+import com.example.ttplayerlrcsearch.entity.*;
 import com.example.ttplayerlrcsearch.service.FindAllMLC;
 import com.example.ttplayerlrcsearch.service.MusicLrcSearch;
 import com.example.ttplayerlrcsearch.util.StringUtil;
@@ -44,7 +41,7 @@ public class ApiServer {
         String lrcId = parameter.get("dl?Id");
         if(StringUtil.isNull(lrcId)){
             //搜索模式
-            List<Map<String, String>> data = searchLrc(artist, title);
+            List<TTPlayResult> data = searchLrc(artist, title);
             //生成返回数据
             resultData = serarchParse(data);
             //resultData = returnText();//特殊符号测试
@@ -62,11 +59,11 @@ public class ApiServer {
                 ApiResponse<String> downloadResponse = null;
                 try {
                     downloadResponse = mlc.download(entity.getSouId());
-                    if(downloadResponse.isSuccess()){
+                    if(downloadResponse!=null && downloadResponse.isSuccess()){
                         resultData = downloadResponse.getData();
                         log.info("下载成功！歌词大小为 {}",StringUtil.formatSize(resultData.getBytes(StandardCharsets.UTF_8).length));
                     }else{
-                        log.info("下载失败!{}",downloadResponse.getMessage());
+                        log.info("下载失败!{}",downloadResponse!=null?downloadResponse.getMessage():downloadResponse);
                     }
                 } catch (Exception e) {
                     log.error("调用download出现错误错误");
@@ -85,12 +82,12 @@ public class ApiServer {
         return fac!=null&&fac.getAllMLCServiceList().size()>0;
     }
     //批量查询每个接口
-    public List<Map<String,String>> searchLrc(String artist, String title){
-        List<Map<String,String>> result = new ArrayList<>();
+    public List<TTPlayResult> searchLrc(String artist, String title){
+        List<TTPlayResult> result = new ArrayList<>();
         for (MusicLrcSearch mlc:fac.getAllMLCServiceList()){
             log.info("正在使用 {} 引擎查询...",mlc.getSearchName());
             long time = System.currentTimeMillis();
-            List<Map<String, String>> searchResult = null;
+            List<TTPlayResult> searchResult = null;
             try {
                 searchResult = mlc.search(artist, title);
             } catch (Exception e) {
@@ -168,16 +165,21 @@ public class ApiServer {
     }
 
     private static final String resultTemplet = "\t<lrc id='%s' artist='%s' title='%s'></lrc>\r\n";
-    private String serarchParse(List<Map<String,String>> data){
+    private String serarchParse(List<TTPlayResult> data){
         StringBuffer sb = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<result>\n");
 
-        for (Map<String,String> song:data){
+        for (TTPlayResult song:data){
 //            log.info(JSON.toJSONString(song));
             sb.append(
+//                    String.format(resultTemplet
+//                            ,StringUtil.formatXml(song.get("id"))
+//                            ,StringUtil.formatXml(song.get("artist"))
+//                            ,StringUtil.formatXml(song.get("title"))
+//                    )
                     String.format(resultTemplet
-                            ,StringUtil.formatXml(song.get("id"))
-                            ,StringUtil.formatXml(song.get("artist"))
-                            ,StringUtil.formatXml(song.get("title"))
+                            ,StringUtil.formatXml(song.id)
+                            ,StringUtil.formatXml(song.artist)
+                            ,StringUtil.formatXml(song.title)
                     )
             );
         }

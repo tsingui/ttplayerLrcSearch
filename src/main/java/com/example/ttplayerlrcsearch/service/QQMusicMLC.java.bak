@@ -32,8 +32,8 @@ public class QQMusicMLC extends LRCDispose implements MusicLrcSearch {
         return searchName;
     }
 
-    private String searchUrl = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp?new_json=1&n=%s&w=%s";
-    private String downlooadUrl = "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?format=json&g_tk=5381&songmid=%s";
+    private String searchUrl = "https://u.y.qq.com/soso/fcgi-bin/client_search_cp?new_json=1&n=%s&w=%s";
+    private String downlooadUrl = "https://u.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?format=json&g_tk=5381&songmid=%s";
 
     private int pageNum = 50;
     @Value("${MLC.pageNum}")

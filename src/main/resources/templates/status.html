@@ -142,6 +142,8 @@
     var startTime,serachNum,downloadNUm,autoRefresh=10000;
 
     function setData(result){
+      setTimeout(f5,autoRefresh)
+
       let data = JSON.parse(result)["data"];
       if(data){
         startTime = data["startTime"]
@@ -200,7 +202,6 @@
         document.querySelector(".barVal").style.animation = "";
         Ajax.get("info",setData)
       }
-      setTimeout(f5,autoRefresh)
     }
     window.onload = function (){
       f5()

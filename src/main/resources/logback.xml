@@ -12,6 +12,7 @@
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
 <!--            <Pattern>%yellow(%date{yyyy-MM-dd HH:mm:ss.SSS}) %highlight(%-5level)[%thread]%green(%logger{56}.%method:%L) - %gray(%msg) %n</Pattern>-->
             <Pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} %-5level[%thread]%logger{56}.%method:%L - %msg %n</Pattern>
+            <charset>UTF-8</charset>
         </encoder>
         <!-- 过滤日志 只保留 INFO 级别
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
@@ -27,6 +28,7 @@
 
     <!-- 用来保存输出所有级别的日志 -->
     <appender name="file.all" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <param name="Encoding" value="UTF-8" />
         <File>${log.base}/debug.log</File><!-- 设置日志不超过${log.max.size}时的保存路径，注意如果
             是web项目会保存到Tomcat的bin目录 下 -->
         <!-- 滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件。 -->
@@ -46,6 +48,7 @@
     </appender>
 
     <appender name="file.info" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <param name="Encoding" value="UTF-8" />
         <File>${log.base}/info.log</File><!-- 设置日志不超过${log.max.size}时的保存路径，注意如果
             是web项目会保存到Tomcat的bin目录 下 -->
         <!-- 滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件。 -->

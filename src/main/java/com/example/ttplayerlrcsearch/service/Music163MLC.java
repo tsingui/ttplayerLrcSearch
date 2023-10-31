@@ -31,25 +31,28 @@ import java.util.*;
 public class Music163MLC extends LRCDispose implements MusicLrcSearch {
     private static final String searchName = "网易云";
 
-//    private static final String searchUrl = "https://music.163.com/weapi/cloudsearch/get/web";
-    private static final String searchUrl = "https://music.163.com/weapi/search/suggest/web?csrf_token=";
+    //    private static final String searchUrl = "https://music.163.com/weapi/cloudsearch/get/web";
+    private String searchUrl = "https://music.163.com/weapi/cloudsearch/get/web";
 
     private static final String downlooadUrl = "http://music.163.com/api/song/lyric?id=%s&lv=1&kv=1&tv=-1";
 
 
     private String MUSIC_U = "";
+
     @Value("${MLC.music163.MUSIC_U}")
-    private void setToken(String musicU){
-        if(StringUtil.notEmpty(musicU)){
-            this.MUSIC_U = String.format("MUSIC_U=%s;",musicU);
-        }else{
+    private void setToken(String musicU) {
+        if (StringUtil.notEmpty(musicU)) {
+            this.MUSIC_U = String.format("MUSIC_U=%s;", musicU);
+        } else {
             this.MUSIC_U = "";
         }
     }
+
     private int pageNum = 50;
+
     @Value("${MLC.pageNum}")
     private void setPageNum(Integer pageNum) {
-        if(pageNum!=null){
+        if (pageNum != null) {
             this.pageNum = pageNum;
         }
     }
@@ -63,7 +66,7 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
     public List<TTPlayResult> search(String artist, String title) {
         String resultText = searchApi(String.format("%s %s", title, artist));
 
-        if(returnErrData(resultText)){
+        if (returnErrData(resultText)) {
             log.error("网易云 接口异常,新版本限制了搜索字符的长度，可缩减后再次尝试");
             return null;
         }
@@ -74,9 +77,9 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
 
     @Override
     public ApiResponse download(String musicId) {
-        log.info("歌曲id为：{}",musicId);
+        log.info("歌曲id为：{}", musicId);
         String result = downloadLrc(musicId);
-        if(StringUtil.isNull(result)){
+        if (StringUtil.isNull(result)) {
             return ApiResponse.returnFail("歌词下载失败！");
         }
         return ApiResponse.returnOK().setDataNow(result);
@@ -86,122 +89,87 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         //注册BouncyCastle，参考：https://blog.csdn.net/qq_29583513/article/details/78866461
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
     }
-    public Music163MLC(){
+
+    public Music163MLC() {
         initHeaderMap();
     }
 
-    private Map<String,String> headerMap = new HashMap<>();
+    private Map<String, String> headerMap = new HashMap<>();
+
     private void initHeaderMap() {
         headerMap.clear();
-        headerMap.put("Content-Type","application/x-www-form-urlencoded");
-        headerMap.put("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
+        headerMap.put("Content-Type", "application/x-www-form-urlencoded");
+        headerMap.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
     }
 
 
-/*
-    // 老接口，已失效
+    // 老接口，需要登录
     //算法参考：https://blog.csdn.net/qq_25816185/article/details/81626499
     // AES 算法
     // 需要 Pkcs7 填充算法
-    private String b(String text,String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
+    private String b(String text, String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
         String vi_str = "0102030405060708";
-        SecretKeySpec aes = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8),"AES");
+        SecretKeySpec aes = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
         Cipher cbc = Cipher.getInstance("AES/CBC/PKCS7Padding");
         IvParameterSpec iv = new IvParameterSpec(vi_str.getBytes(StandardCharsets.UTF_8));
         //Cipher.ENCRYPT_MODE 加密模式
-        cbc.init(Cipher.ENCRYPT_MODE,aes,iv);
+        cbc.init(Cipher.ENCRYPT_MODE, aes, iv);
         byte[] outBytes = cbc.doFinal(text.getBytes(StandardCharsets.UTF_8));
         return Base64.getEncoder().encodeToString(outBytes);
     }
-    */
-//    private String b_de(String text,String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
-//        String vi_str = "0102030405060708";
-//        SecretKeySpec aes = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8),"AES");
-//        Cipher cbc = Cipher.getInstance("AES/CBC/PKCS7Padding");
-//        IvParameterSpec iv = new IvParameterSpec(vi_str.getBytes(StandardCharsets.UTF_8));
-//        //Cipher.DECRYPT_MODE 解密模式
-//        cbc.init(Cipher.DECRYPT_MODE,aes,iv);
-//        byte[] outBytes = cbc.doFinal(Base64.getDecoder().decode(text));
-//        return new String(outBytes);
-//    }
 
-//    /**
-//     *  老接口，已失效
-//     * @param a "{"logs":"[{\"action\":\"searchkeywordclient\",\"json\":{\"type\":\"song\",\"keyword\":\"飞鸟和蝉\",\"offset\":0,\"device_id\":\"null\"}}]","csrf_token":"f4bb831c2d7666cb36984c9788391035"}"
-//     * @param b "010001"
-//     * @param c "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
-//     * @param d "0CoJUm6Qyw8W8jud"
-//     * @return
-//     */
-//    private Map<String,String> d(String a,String b,String c,String d){
-//        String encSecKey = "ac63ea8b4e59d7ecdaa1b2d0b7df0e2fb7a269bf830b1ee042efbd0704dda31f4ac4c1680ad7505b3c101fc1c21127d0695d67c7c805e6bdd4a941ec11baf459ca9236674876bd450a2b43571dc80e306766c6f7dccbca7328729c4f5b107fab8a7f2bb3879ea2399db5beb2472c232a1b0e1bf3eac7ff29d7eba1415bc81dce";
-//        String encText = "";
-//        //由a随机生成，会影响到后续两个值
-//        String i = "qYpxGZT3agL1T2o1";
-//        try {
-//            String tmp = b(a,d);
-//            encText = b(tmp,i);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        Map<String,String> result = new HashMap<>();
-//        result.put("encSecKey",encSecKey);
-//        result.put("encText",encText);
-//        return result;
-//    }
+    private String b_de(String text, String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
+        String vi_str = "0102030405060708";
+        SecretKeySpec aes = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "AES");
+        Cipher cbc = Cipher.getInstance("AES/CBC/PKCS7Padding");
+        IvParameterSpec iv = new IvParameterSpec(vi_str.getBytes(StandardCharsets.UTF_8));
+        //Cipher.DECRYPT_MODE 解密模式
+        cbc.init(Cipher.DECRYPT_MODE, aes, iv);
+        byte[] outBytes = cbc.doFinal(Base64.getDecoder().decode(text));
+        return new String(outBytes);
+    }
+
+    /**
+     *
+     * @param a "{"logs":"[{\"action\":\"searchkeywordclient\",\"json\":{\"type\":\"song\",\"keyword\":\"飞鸟和蝉\",\"offset\":0,\"device_id\":\"null\"}}]","csrf_token":"f4bb831c2d7666cb36984c9788391035"}"
+     * @param b "010001"
+     * @param c "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
+     * @param d "0CoJUm6Qyw8W8jud"
+     * @return
+     */
+    private Map<String, String> d(String a, String b, String c, String d) {
+        String encSecKey = "ac63ea8b4e59d7ecdaa1b2d0b7df0e2fb7a269bf830b1ee042efbd0704dda31f4ac4c1680ad7505b3c101fc1c21127d0695d67c7c805e6bdd4a941ec11baf459ca9236674876bd450a2b43571dc80e306766c6f7dccbca7328729c4f5b107fab8a7f2bb3879ea2399db5beb2472c232a1b0e1bf3eac7ff29d7eba1415bc81dce";
+        String encText = "";
+        //由a随机生成，会影响到后续两个值
+        String i = "qYpxGZT3agL1T2o1";
+        try {
+            String tmp = b(a, d);
+            encText = b(tmp, i);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Map<String, String> result = new HashMap<>();
+        result.put("encSecKey", encSecKey);
+        result.put("encText", encText);
+        return result;
+    }
 
     //-- 2023-10-31 --
-    public static byte[] encrypt(byte[] input, byte[] secretKey)
-            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-            InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
-        // 创建密码对象，需要传入算法名称/工作模式/填充方式
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        // 根据secretKey(密钥)的字节内容，"恢复"秘钥对象
-        SecretKey keySpec = new SecretKeySpec(secretKey, "AES");
-
-        //固定iv
-        byte[] iv = new byte[0];
-        iv = "0102030405060708".getBytes("UTF-8");
-
-        IvParameterSpec ivps = new IvParameterSpec(iv); // 随机数封装成IvParameterSpec参数对象
-        // 初始化秘钥:操作模式、秘钥、IV参数
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivps);
-        // 根据原始内容(字节),进行加密
-        byte[] data = cipher.doFinal(input);
-        return data;
-    }
-    private String b(String a, String b){
-        byte[] encrypted = new byte[0];
-        try {
-            encrypted = encrypt(a.getBytes("UTF-8"), b.getBytes("UTF-8"));
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalBlockSizeException e) {
-            throw new RuntimeException(e);
-        } catch (BadPaddingException e) {
-            throw new RuntimeException(e);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        return Base64.getEncoder().encodeToString(encrypted);
-    }
-    private Map<String,String> d(String text){
+    private Map<String, String> d_noLogin(String text) {
         String e = "010001",
                 f = "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7",
                 g = "0CoJUm6Qyw8W8jud";
 
         Map<String, String> h = new HashMap<>();
-        String encText = "", encSecKey="";
+        String encText = "", encSecKey = "";
 //        String i = a(16);
         String i = "7r9WuOLG6rPvIPeL";
-        encText = b(text, g);
-        encText = b(encText, i);
+        try {
+            encText = b(text, g);
+            encText = b(encText, i);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
 
 //        encSecKey = c(i, e, f);
         encSecKey = "25718f3e2f6ce838121257247d1b970f83b48d2f60d4b076db7d0ddc89617e718f09016524c89696cb8ffeee9610db07ca14a44208b27bcbccb0b605655be11f05e972434d1a67a00bf80c424b31f8b288b3ac1e7bab3fe773b0975d643b42c99885e9045a4e148f30ca343de184644b76841ae843c91a95591af40e28ba5f06";
@@ -212,27 +180,29 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
     }
     //-- 2023-10-31 --
 
-    private String searchApi(String text){
+    private String searchApi(String text) {
         String temple = "{\"hlpretag\":\"<span class=\\\"s-fc7\\\">\",\"hlposttag\":\"</span>\",\"s\":\"%s\",\"type\":\"1\",\"offset\":\"0\",\"total\":\"true\",\"limit\":\"%s\"}";
 
-        temple = "{\"s\":\"%s\",\"limit\":\"%s\"}";// ,"csrf_token":""}
+        Map<String, String> d_en = null;
+        if (StringUtil.isNull(MUSIC_U)) {
+            log.info("未检测到 cookie ，使用未登录接口查询");
+            this.searchUrl = "https://music.163.com/weapi/search/suggest/web?csrf_token=";
+            temple = "{\"s\":\"%s\",\"limit\":\"%s\"}";// ,"csrf_token":""}
+            d_en = d_noLogin(String.format(temple, text, pageNum));
+        } else {
+            this.searchUrl = "https://music.163.com/weapi/cloudsearch/get/web";
+            log.info("检测到 cookie ，使用登录接口查询");
+            d_en = d(String.format(temple, text, pageNum)
+                    , "010001"
+                    , "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
+                    , "0CoJUm6Qyw8W8jud"
+            );
+        }
 
-//        if(text.length()>10){
-//            text = text.substring(0,9);
-//            log.warn("网易云新版未登录接口限制，只能输入10个字符进行搜索，本次搜索字符：{}", text);
-//        }
-
-        // 未登录只能查找到前20首
-//        Map<String, String> d_en = d(String.format(temple, text, pageNum)
-//                , "010001"
-//                , "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
-//                , "0CoJUm6Qyw8W8jud"
-//        );
-        Map<String, String> d_en = d(String.format(temple, text, pageNum));
-        log.info("params=encText=[{}] {}", d_en.get("encText").length(), d_en.get("encText"));
-        log.debug("encSecKey=encSecKey= {}",d_en.get("encSecKey"));
+        log.debug("params=encText=[{}] {}", d_en.get("encText").length(), d_en.get("encText"));
+        log.debug("encSecKey=encSecKey= {}", d_en.get("encSecKey"));
         HttpRequestWithBody request = Unirest.post(searchUrl).headers(headerMap);
-        if(StringUtil.notEmpty(MUSIC_U)){
+        if (StringUtil.notEmpty(MUSIC_U)) {
             request.header("cookie", MUSIC_U);
         }
         MultipartBody u = request
@@ -244,7 +214,7 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         try {
             long start = System.currentTimeMillis();
             asString = u.asString();
-            log.debug("Api Use Time:{} ms",(System.currentTimeMillis() - start)/1000.0);
+            log.debug("Api Use Time:{} ms", (System.currentTimeMillis() - start) / 1000.0);
         } catch (UnirestException e) {
             e.printStackTrace();
         }
@@ -255,30 +225,33 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         return data;
     }
 
-    private boolean returnErrData(String html){
+    private boolean returnErrData(String html) {
         JSONObject obj = JSON.parseObject(html);
         JSONObject result1 = obj.getJSONObject("result");
-        if(result1==null || result1.size()==0){
+        if (result1 == null || result1.size() == 0) {
             return true;
         }
         return false;
     }
 
-    private List<TTPlayResult> parse(String sourseData){
+    private List<TTPlayResult> parse(String sourseData) {
         List<TTPlayResult> result = new ArrayList<>();
         long start = System.currentTimeMillis();
         JSONObject obj = JSON.parseObject(sourseData);
         log.debug("parseJSON Use Time: {} ms,data size: {}"
-                ,(System.currentTimeMillis() - start)/1000.0
-                ,StringUtil.formatSize(sourseData.getBytes(StandardCharsets.UTF_8).length)
+                , (System.currentTimeMillis() - start) / 1000.0
+                , StringUtil.formatSize(sourseData.getBytes(StandardCharsets.UTF_8).length)
         );
-        if(200 != obj.getInteger("code")){
-            log.error("接口返回了异常数据：{}",sourseData);
+        if (200 != obj.getInteger("code")) {
+            log.error("接口返回了异常数据：{}", sourseData);
         }
         JSONArray songList = obj.getJSONObject("result").getJSONArray("songs");
         for (int i = 0; i < songList.size(); i++) {
             JSONObject songItem = songList.getJSONObject(i);
-            JSONArray singerList = songItem.getJSONArray("artists");
+            JSONArray singerList = songItem.getJSONArray("artists");//未登录接口
+            if(singerList==null){
+                singerList = songItem.getJSONArray("ar");//老接口
+            }
 
             // v1
             /*
@@ -295,14 +268,14 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
 
             //v2
             TTPlayResult song = new TTPlayResult();
-            song.id = BuffData.addId(songItem.getString("id"),this);
-            song.title = "【"+this.getSearchName()+"】"+songItem.getString("name");
-                    //String.format("【%s】%s",this.getSearchName(),songItem.getString("name"));
-            song.artist = arrayJoinSinger(singerList,"、");
+            song.id = BuffData.addId(songItem.getString("id"), this);
+            song.title = "【" + this.getSearchName() + "】" + songItem.getString("name");
+            //String.format("【%s】%s",this.getSearchName(),songItem.getString("name"));
+            song.artist = arrayJoinSinger(singerList, "、");
             result.add(song);
 
             //内存优化
-            if(singerList!=null){
+            if (singerList != null) {
                 singerList.clear();
             }
             singerList = null;
@@ -315,14 +288,15 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         obj = null;
         return result;
     }
-    private String arrayJoinSinger(JSONArray arr,String c){
-        if(arr==null)return null;
+
+    private String arrayJoinSinger(JSONArray arr, String c) {
+        if (arr == null) return null;
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < arr.size(); i++) {
             sb.append(
                     arr.getJSONObject(i).getString("name")
             );
-            if(i+1<arr.size()){
+            if (i + 1 < arr.size()) {
                 sb.append(c);
             }
         }
@@ -330,7 +304,7 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
     }
 
     //下载歌词参考：https://blog.csdn.net/weixin_42742658/article/details/103484096
-    private String downloadLrc(String musicId){
+    private String downloadLrc(String musicId) {
         GetRequest getRequest = Unirest.get(String.format(downlooadUrl, musicId));
         getRequest.headers(headerMap);
         HttpResponse<String> response = null;
@@ -343,22 +317,22 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
 
         JSONObject obj = JSON.parseObject(jsonResult);
         Integer code = obj.getInteger("code");
-        if(code !=null && !code.equals(200)){
-            log.warn("警告，接口似乎未返回正确数据：{}",jsonResult);
+        if (code != null && !code.equals(200)) {
+            log.warn("警告，接口似乎未返回正确数据：{}", jsonResult);
         }
         JSONObject lrcNode = obj.getJSONObject("lrc");
         String lrc = null;
-        if(lrcNode==null){
+        if (lrcNode == null) {
             //lrc = "纯音乐，无歌词";
             log.warn("警告，该歌曲未上传歌词！");
-        }else{
+        } else {
             JSONObject transNode = obj.getJSONObject("tlyric");
             lrc = lrcNode.getString("lyric");
 
-            if(transNode!=null){
+            if (transNode != null) {
                 String trans = transNode.getString("lyric");
-                if(StringUtil.notEmpty(trans)){
-                    lrc = doTrans(lrc,trans);
+                if (StringUtil.notEmpty(trans)) {
+                    lrc = doTrans(lrc, trans);
                 }
             }
 
@@ -376,7 +350,7 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
     }
 
     @Test
-    public void t001(){
+    public void t001() {
         //注册BouncyCastle，参考：https://blog.csdn.net/qq_29583513/article/details/78866461
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         //log.info(a());
@@ -392,13 +366,14 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
 //            e.printStackTrace();
 //        }
     }
-//    @Test
+
+    //    @Test
 //    public void t002(){
 //        String data = searchApi("飞鸟和蝉");
 //        List<Map<String, String>> parse = parse(data);
 //    }
     @Test
-    public void t003(){
+    public void t003() {
         Unirest.setTimeouts(0, 0);
         try {
             HttpResponse<String> response = Unirest.post("https://music.163.com/weapi/cloudsearch/get/web")
@@ -407,18 +382,18 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
 //                            " _ntes_nnid=ee1b6d8d4388b765fd6a12042f95e531,1631272587945;" +
 //                            " _ntes_nuid=ee1b6d8d4388b765fd6a12042f95e531;" +
 //                            " NMTID=00O1L2Vd2MweM4iBklQv5sO3MB-hAIAAAF7z2xUbg;" +
-                            //" csrfToken=7PrFGeSQgu8FGhktzOxNv0sl;" +
+                                    //" csrfToken=7PrFGeSQgu8FGhktzOxNv0sl;" +
 //                            " WNMCID=jiklll.1631272589918.01.0;" +
 //                            " WEVNSM=1.0.0;" +
 //                            " WM_NI=y9Z0z6wogPPCt0doYZvwXxdtNVy0wp6b313UBUcYsVC5mRHXVXYjsDUP1BUk5nL9fc25ZBsSvH18l8ii6Dd%2BgjA8LkXZUw80twTvRV%2BQ%2FnAy8hoPuqS3CknN0vXRQ%2FF5eno%3D;" +
 //                            " WM_NIKE=9ca17ae2e6ffcda170e2e6eeb6aa45a8ef81b7c64bb7a88eb2d14e839a9eaaf566e988beb0e54af2acfbb0b72af0fea7c3b92abbe796d1f93eb5b1a9b1d349b8f0ac90dc52b6a99899e7808e8ab7d1f67cf6befdd2b25f828badbaf25e81eba3b3cb549688978bf2509790ffa3d861f7b284dae569f2eb96a3f259b698ffd9ef34abb7faa5e721a5b68fd9cf619c869b98bb3cb8a99c97d15ee98fe18fc473fcb8a1b1f87b91ed8d8ced46f4aa98b3d42586ebab8fee37e2a3;" +
 //                            " WM_TID=MIA8pxinKzdBBRRQQFdq3%2FX%2FfLBztn%2Fl; ntes_kaola_ad=1; JSESSIONID-WYYY=5fVAmKvFrKsBP4P3mEVB6Gk9BK%2FT5X7O12XqW2069wtHctkx5fWU5cy4AQ4AWnG0gM%2B4%5CTRFdhqxAtgoHjJvwfTem0lcXR%2BC%2Fl9NcpeDJ%2FxdAzwP263%2BHmt2PepJpPOw%5C0s1%2FQKZztdZcr27KJ%2F2O9WOEynCsInOCQ3Y%2FdsPYmEYzYu5%3A1631284833842;" +
-                            //" __csrf=b0f515d95b739febadb9676c8ecfc5e4;" +
+                                    //" __csrf=b0f515d95b739febadb9676c8ecfc5e4;" +
 //                            " __remember_me=true;" +
-                            " MUSIC_U=a165ec086e22b99cc5085d4dbeb807475e9b5233b736633d60f4ef141ef9ad89e2b245612b211a3db72149bd3b14523943124f3fcebe94e446b14e3f0c3f8af9090f3ad7c86ad1db;" +
-                            //" NMTID=00O6ngI72iOFJcGbkfor5mjZFrOcrgAAAF7yok-PQ;" +
+                                    " MUSIC_U=a165ec086e22b99cc5085d4dbeb807475e9b5233b736633d60f4ef141ef9ad89e2b245612b211a3db72149bd3b14523943124f3fcebe94e446b14e3f0c3f8af9090f3ad7c86ad1db;" +
+                                    //" NMTID=00O6ngI72iOFJcGbkfor5mjZFrOcrgAAAF7yok-PQ;" +
 //                            " ntes_kaola_ad=1" +
-                            ""
+                                    ""
                     )
 //                    .header("Content-Type", "application/x-www-form-urlencoded")
                     .field("params", "5/e2SJnA6lzr5v5S3QJ3lOxddWW4RVqp0bLpVWL0aaajBglvA26QgouXt/pTcLscIrclCDi9tFaO7QWsh4p59+uOtz0beIGX340THAdI5pRr3UKQhtgI0FDq5r1HRcZWqTYExNLKmxUXlx68ZrWZSSU03ks2+w2cYktsDwgWkPE2B9Dhxmx50UbzOTZQJjKT01rA7QTAS3h8YtmYrh/PJem2ziBWfl6TcvfyiCXalIsHdZLcAotfUDn1w5Iqr/wj1Rlldj9pCV0LcV+q0s2RSUM80tkoEKRUBu2hXsgOzc2sngHjJKCBJlbC3sIkcoN99UFKw7RJiz3DtCzrUjw/StqXE20MhIEp+dyHnakdwc1Uxz493YBqjlyuAXWG696iTFXGb4NHe0kOLd6XMOLChg==")
@@ -438,7 +413,7 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         HttpResponse<String> response = Unirest.post("https://music.163.com/weapi/cloudsearch/get/web")
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Cookie", "NMTID=00O6ngI72iOFJcGbkfor5mjZFrOcrgAAAF7yok-PQ; ntes_kaola_ad=1")
-                .header("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36")
                 .field("params", "v7WJ502sT6l4CuhhI++3F19x9hk8KeYTJmWxJSDUSqg2sTo363xklvi9gtX5D0mYuHU6tQqjU81hQUPnq3FMNqzu3NUY7AtRM62ayFaJky+ob/mciLMGBxyR6Wt8oxxpbC829kWYBR7ZLVpcIubRIKKbfLP43081s6txB8MhLm9J8SCncfI9BamtkyohsLIllh06flwu7ulyPzVK20tSFgEM3RxnGP+dTX3RPxDO6MdsQMdiCfgaE1EzCl3oyu4l74n4MsLhIcopDE87v0x/Qg==")
                 .field("encSecKey", "ac63ea8b4e59d7ecdaa1b2d0b7df0e2fb7a269bf830b1ee042efbd0704dda31f4ac4c1680ad7505b3c101fc1c21127d0695d67c7c805e6bdd4a941ec11baf459ca9236674876bd450a2b43571dc80e306766c6f7dccbca7328729c4f5b107fab8a7f2bb3879ea2399db5beb2472c232a1b0e1bf3eac7ff29d7eba1415bc81dce")
                 .asString();

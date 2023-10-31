@@ -74,7 +74,8 @@ public class StringUtil {
     public static LastRead readLastLine(File file,LastRead lr){
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(file));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file),"UTF-8"));
+            //br = new BufferedReader(new FileReader(file));
             String buff = null;
             while ((buff=br.readLine())!=null){
                 lr.add(buff);

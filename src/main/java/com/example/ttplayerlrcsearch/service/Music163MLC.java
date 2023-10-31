@@ -18,12 +18,10 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.*;
@@ -33,7 +31,9 @@ import java.util.*;
 public class Music163MLC extends LRCDispose implements MusicLrcSearch {
     private static final String searchName = "网易云";
 
-    private static final String searchUrl = "https://music.163.com/weapi/cloudsearch/get/web";
+//    private static final String searchUrl = "https://music.163.com/weapi/cloudsearch/get/web";
+    private static final String searchUrl = "https://music.163.com/weapi/search/suggest/web?csrf_token=";
+
     private static final String downlooadUrl = "http://music.163.com/api/song/lyric?id=%s&lv=1&kv=1&tv=-1";
 
 
@@ -62,6 +62,12 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
     @Override
     public List<TTPlayResult> search(String artist, String title) {
         String resultText = searchApi(String.format("%s %s", title, artist));
+
+        if(returnErrData(resultText)){
+            log.error("网易云 接口异常,新版本限制了搜索字符的长度，可缩减后再次尝试");
+            return null;
+        }
+
         List<TTPlayResult> songList = parse(resultText);
         return songList;
     }
@@ -91,6 +97,9 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         headerMap.put("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
     }
 
+
+/*
+    // 老接口，已失效
     //算法参考：https://blog.csdn.net/qq_25816185/article/details/81626499
     // AES 算法
     // 需要 Pkcs7 填充算法
@@ -104,6 +113,7 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         byte[] outBytes = cbc.doFinal(text.getBytes(StandardCharsets.UTF_8));
         return Base64.getEncoder().encodeToString(outBytes);
     }
+    */
 //    private String b_de(String text,String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 //        String vi_str = "0102030405060708";
 //        SecretKeySpec aes = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8),"AES");
@@ -115,41 +125,111 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
 //        return new String(outBytes);
 //    }
 
-    /**
-     *
-     * @param a "{"logs":"[{\"action\":\"searchkeywordclient\",\"json\":{\"type\":\"song\",\"keyword\":\"飞鸟和蝉\",\"offset\":0,\"device_id\":\"null\"}}]","csrf_token":"f4bb831c2d7666cb36984c9788391035"}"
-     * @param b "010001"
-     * @param c "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
-     * @param d "0CoJUm6Qyw8W8jud"
-     * @return
-     */
-    private Map<String,String> d(String a,String b,String c,String d){
-        String encSecKey = "ac63ea8b4e59d7ecdaa1b2d0b7df0e2fb7a269bf830b1ee042efbd0704dda31f4ac4c1680ad7505b3c101fc1c21127d0695d67c7c805e6bdd4a941ec11baf459ca9236674876bd450a2b43571dc80e306766c6f7dccbca7328729c4f5b107fab8a7f2bb3879ea2399db5beb2472c232a1b0e1bf3eac7ff29d7eba1415bc81dce";
-        String encText = "";
-        //由a随机生成，会影响到后续两个值
-        String i = "qYpxGZT3agL1T2o1";
-        try {
-            String tmp = b(a,d);
-            encText = b(tmp,i);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Map<String,String> result = new HashMap<>();
-        result.put("encSecKey",encSecKey);
-        result.put("encText",encText);
-        return result;
+//    /**
+//     *  老接口，已失效
+//     * @param a "{"logs":"[{\"action\":\"searchkeywordclient\",\"json\":{\"type\":\"song\",\"keyword\":\"飞鸟和蝉\",\"offset\":0,\"device_id\":\"null\"}}]","csrf_token":"f4bb831c2d7666cb36984c9788391035"}"
+//     * @param b "010001"
+//     * @param c "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
+//     * @param d "0CoJUm6Qyw8W8jud"
+//     * @return
+//     */
+//    private Map<String,String> d(String a,String b,String c,String d){
+//        String encSecKey = "ac63ea8b4e59d7ecdaa1b2d0b7df0e2fb7a269bf830b1ee042efbd0704dda31f4ac4c1680ad7505b3c101fc1c21127d0695d67c7c805e6bdd4a941ec11baf459ca9236674876bd450a2b43571dc80e306766c6f7dccbca7328729c4f5b107fab8a7f2bb3879ea2399db5beb2472c232a1b0e1bf3eac7ff29d7eba1415bc81dce";
+//        String encText = "";
+//        //由a随机生成，会影响到后续两个值
+//        String i = "qYpxGZT3agL1T2o1";
+//        try {
+//            String tmp = b(a,d);
+//            encText = b(tmp,i);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        Map<String,String> result = new HashMap<>();
+//        result.put("encSecKey",encSecKey);
+//        result.put("encText",encText);
+//        return result;
+//    }
+
+    //-- 2023-10-31 --
+    public static byte[] encrypt(byte[] input, byte[] secretKey)
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
+            InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
+        // 创建密码对象，需要传入算法名称/工作模式/填充方式
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        // 根据secretKey(密钥)的字节内容，"恢复"秘钥对象
+        SecretKey keySpec = new SecretKeySpec(secretKey, "AES");
+
+        //固定iv
+        byte[] iv = new byte[0];
+        iv = "0102030405060708".getBytes("UTF-8");
+
+        IvParameterSpec ivps = new IvParameterSpec(iv); // 随机数封装成IvParameterSpec参数对象
+        // 初始化秘钥:操作模式、秘钥、IV参数
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivps);
+        // 根据原始内容(字节),进行加密
+        byte[] data = cipher.doFinal(input);
+        return data;
     }
+    private String b(String a, String b){
+        byte[] encrypted = new byte[0];
+        try {
+            encrypted = encrypt(a.getBytes("UTF-8"), b.getBytes("UTF-8"));
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException(e);
+        } catch (BadPaddingException e) {
+            throw new RuntimeException(e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        return Base64.getEncoder().encodeToString(encrypted);
+    }
+    private Map<String,String> d(String text){
+        String e = "010001",
+                f = "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7",
+                g = "0CoJUm6Qyw8W8jud";
+
+        Map<String, String> h = new HashMap<>();
+        String encText = "", encSecKey="";
+//        String i = a(16);
+        String i = "7r9WuOLG6rPvIPeL";
+        encText = b(text, g);
+        encText = b(encText, i);
+
+//        encSecKey = c(i, e, f);
+        encSecKey = "25718f3e2f6ce838121257247d1b970f83b48d2f60d4b076db7d0ddc89617e718f09016524c89696cb8ffeee9610db07ca14a44208b27bcbccb0b605655be11f05e972434d1a67a00bf80c424b31f8b288b3ac1e7bab3fe773b0975d643b42c99885e9045a4e148f30ca343de184644b76841ae843c91a95591af40e28ba5f06";
+
+        h.put("encText", encText);
+        h.put("encSecKey", encSecKey);
+        return h;
+    }
+    //-- 2023-10-31 --
 
     private String searchApi(String text){
         String temple = "{\"hlpretag\":\"<span class=\\\"s-fc7\\\">\",\"hlposttag\":\"</span>\",\"s\":\"%s\",\"type\":\"1\",\"offset\":\"0\",\"total\":\"true\",\"limit\":\"%s\"}";
 
+        temple = "{\"s\":\"%s\",\"limit\":\"%s\"}";// ,"csrf_token":""}
+
+//        if(text.length()>10){
+//            text = text.substring(0,9);
+//            log.warn("网易云新版未登录接口限制，只能输入10个字符进行搜索，本次搜索字符：{}", text);
+//        }
+
         // 未登录只能查找到前20首
-        Map<String, String> d_en = d(String.format(temple, text, pageNum)
-                , "010001"
-                , "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
-                , "0CoJUm6Qyw8W8jud"
-        );
-        log.debug("params=encText= {}",d_en.get("encText"));
+//        Map<String, String> d_en = d(String.format(temple, text, pageNum)
+//                , "010001"
+//                , "00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7"
+//                , "0CoJUm6Qyw8W8jud"
+//        );
+        Map<String, String> d_en = d(String.format(temple, text, pageNum));
+        log.info("params=encText=[{}] {}", d_en.get("encText").length(), d_en.get("encText"));
         log.debug("encSecKey=encSecKey= {}",d_en.get("encSecKey"));
         HttpRequestWithBody request = Unirest.post(searchUrl).headers(headerMap);
         if(StringUtil.notEmpty(MUSIC_U)){
@@ -175,6 +255,15 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         return data;
     }
 
+    private boolean returnErrData(String html){
+        JSONObject obj = JSON.parseObject(html);
+        JSONObject result1 = obj.getJSONObject("result");
+        if(result1==null || result1.size()==0){
+            return true;
+        }
+        return false;
+    }
+
     private List<TTPlayResult> parse(String sourseData){
         List<TTPlayResult> result = new ArrayList<>();
         long start = System.currentTimeMillis();
@@ -189,7 +278,7 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         JSONArray songList = obj.getJSONObject("result").getJSONArray("songs");
         for (int i = 0; i < songList.size(); i++) {
             JSONObject songItem = songList.getJSONObject(i);
-            JSONArray singerList = songItem.getJSONArray("ar");
+            JSONArray singerList = songItem.getJSONArray("artists");
 
             // v1
             /*
@@ -213,7 +302,9 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
             result.add(song);
 
             //内存优化
-            singerList.clear();
+            if(singerList!=null){
+                singerList.clear();
+            }
             singerList = null;
         }
 //        log.info("数量：{}",songList.size());
@@ -290,28 +381,16 @@ public class Music163MLC extends LRCDispose implements MusicLrcSearch {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         //log.info(a());
         String key = "I8Ahd7zESq2Y6ayg";
-        try {
-            log.info(b("vhY17KdNnne2XDo1o92GriSeUlyB21S7fSCFaJdNCRR5IIThLG+zl3ieOqOq/7eJKM12J0xGu4ma2JSPi81p4Q=="
-                    ,key));
-
-//            log.info(b_de("p20JSR7AqR5phLlIRFU6ppWXrPA8qtGVZy4djW63WULz08bRWFQXxECsXcoIp4H7ZuHjB1Ej2OcJLuTc6p8KGhLyJCsx97VEs9mYdC45vVgLVMHOgGO8CDUKf7kbxihs"
-//                    ,key
-//            ));
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            log.info(b("vhY17KdNnne2XDo1o92GriSeUlyB21S7fSCFaJdNCRR5IIThLG+zl3ieOqOq/7eJKM12J0xGu4ma2JSPi81p4Q=="
+//                    ,key));
+//
+////            log.info(b_de("p20JSR7AqR5phLlIRFU6ppWXrPA8qtGVZy4djW63WULz08bRWFQXxECsXcoIp4H7ZuHjB1Ej2OcJLuTc6p8KGhLyJCsx97VEs9mYdC45vVgLVMHOgGO8CDUKf7kbxihs"
+////                    ,key
+////            ));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 //    @Test
 //    public void t002(){
